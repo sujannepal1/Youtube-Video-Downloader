@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from celery.result import AsyncResult
@@ -5,12 +6,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas import DownloadRequest, DownloadResponse, SongResponse, TaskStatusResponse
+from app.schemas import (
+    BulkDownloadRequest,
+    BulkDownloadResponse,
+    DownloadRequest,
+    DownloadResponse,
+    SongResponse,
+    TaskStatusResponse,
+)
 from models.song import Song
 from worker.celery_app import celery_app
 from worker.tasks import download_task
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/download", response_model=DownloadResponse, status_code=202)
@@ -18,6 +27,20 @@ def submit_download(request: DownloadRequest):
     """Enqueue a YouTube audio download job."""
     task = download_task.delay(request.url, request.labels)
     return DownloadResponse(task_id=task.id, status="queued")
+
+
+@router.post("/bulk-download", response_model=BulkDownloadResponse, status_code=202)
+def submit_bulk_download(request: BulkDownloadRequest):
+    """Enqueue multiple YouTube audio download jobs in a single request (max 100)."""
+    enqueued = []
+    for item in request.items:
+        try:
+            task = download_task.delay(item.url, item.labels)
+            enqueued.append(DownloadResponse(task_id=task.id, status="queued"))
+        except Exception:
+            logger.exception("Failed to enqueue URL: %s", item.url)
+            enqueued.append(DownloadResponse(task_id="", status="enqueue_failed"))
+    return BulkDownloadResponse(enqueued=enqueued, total=len(enqueued))
 
 
 @router.get("/status/{task_id}", response_model=TaskStatusResponse)

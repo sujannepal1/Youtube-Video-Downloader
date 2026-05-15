@@ -45,7 +45,8 @@ Interactive docs: **http://localhost:8000/docs**
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/download` | Enqueue a download job |
+| `POST` | `/api/download` | Enqueue a single download job |
+| `POST` | `/api/bulk-download` | Enqueue multiple download jobs at once |
 | `GET`  | `/api/status/{task_id}` | Poll task status |
 | `GET`  | `/api/songs` | List all downloaded songs |
 | `GET`  | `/api/songs/{id}` | Get a single song by ID |
@@ -55,7 +56,7 @@ Interactive docs: **http://localhost:8000/docs**
 ```bash
 curl -X POST http://localhost:8000/api/download \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "labels": ["pop", "80s"]}'
+  -d '{"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "labels": ["happy"]}'
 ```
 
 Response:
@@ -63,10 +64,30 @@ Response:
 {"task_id": "abc123...", "status": "queued"}
 ```
 
-### Example – poll status
+### Example – bulk-submit multiple downloads
 
 ```bash
-curl http://localhost:8000/api/status/abc123...
+curl -X POST http://localhost:8000/api/bulk-download \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {"url": "https://www.youtube.com/watch?v=video1", "labels": ["happy"]},
+      {"url": "https://www.youtube.com/watch?v=video2", "labels": ["sad"]},
+      {"url": "https://www.youtube.com/watch?v=video3", "labels": ["angry"]}
+    ]
+  }'
+```
+
+Response:
+```json
+{
+  "total": 3,
+  "enqueued": [
+    {"task_id": "abc1...", "status": "queued"},
+    {"task_id": "abc2...", "status": "queued"},
+    {"task_id": "abc3...", "status": "queued"}
+  ]
+}
 ```
 
 ## Services

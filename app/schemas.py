@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DownloadRequest(BaseModel):
@@ -12,6 +12,15 @@ class DownloadRequest(BaseModel):
 class DownloadResponse(BaseModel):
     task_id: str
     status: str
+
+
+class BulkDownloadRequest(BaseModel):
+    items: List[DownloadRequest] = Field(..., min_length=1, max_length=100)
+
+
+class BulkDownloadResponse(BaseModel):
+    enqueued: List[DownloadResponse]
+    total: int
 
 
 class TaskStatusResponse(BaseModel):
