@@ -18,13 +18,18 @@ def extract_metadata(url: str) -> dict:
         }
 
 
-def download_audio(url: str) -> str:
+def download_audio(url: str, label: str = "") -> str:
     """Download the best-quality audio track and convert it to MP3.
+
+    Files are saved under ``<DOWNLOAD_DIR>/<label>/`` so each emotion
+    category gets its own sub-folder.  If *label* is empty, files fall
+    back to the root download directory.
 
     Returns the path to the resulting MP3 file.
     """
-    os.makedirs(settings.DOWNLOAD_DIR, exist_ok=True)
-    output_template = os.path.join(settings.DOWNLOAD_DIR, "%(id)s.%(ext)s")
+    dest_dir = os.path.join(settings.DOWNLOAD_DIR, label) if label else settings.DOWNLOAD_DIR
+    os.makedirs(dest_dir, exist_ok=True)
+    output_template = os.path.join(dest_dir, "%(id)s.%(ext)s")
 
     ydl_opts = {
         "format": "bestaudio/best",
@@ -46,4 +51,4 @@ def download_audio(url: str) -> str:
         if not video_id:
             raise ValueError(f"Could not determine video ID for URL: {url}")
 
-    return os.path.join(settings.DOWNLOAD_DIR, f"{video_id}.mp3")
+    return os.path.join(dest_dir, f"{video_id}.mp3")

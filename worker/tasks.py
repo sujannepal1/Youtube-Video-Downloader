@@ -14,7 +14,10 @@ def download_task(self, url, labels):
         metadata = extract_metadata(url)
         logger.info("Task %s: metadata extracted – title=%s", self.request.id, metadata.get("title"))
 
-        file_path = download_audio(url)
+        # Use the first label as the emotion-category sub-folder so files
+        # are organised as <DOWNLOAD_DIR>/<emotion>/<video_id>.mp3.
+        primary_label = next(iter(labels), "")
+        file_path = download_audio(url, label=primary_label)
         logger.info("Task %s: audio downloaded to %s", self.request.id, file_path)
 
         save_song(metadata, labels, file_path)
