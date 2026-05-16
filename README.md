@@ -22,6 +22,9 @@ yt-audio-dataset/
 ├── models/
 │   └── song.py          # SQLAlchemy Song model + save_song()
 │
+├── migrations/          # Alembic environment + migration versions
+├── alembic.ini          # Alembic configuration
+│
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
@@ -40,6 +43,21 @@ docker compose up --build
 
 The API will be available at **http://localhost:8000**.  
 Interactive docs: **http://localhost:8000/docs**
+
+## Database migrations
+
+Alembic is configured in this repository (`alembic.ini` + `migrations/`).
+
+```bash
+# Apply all pending migrations
+docker compose exec api alembic upgrade head
+
+# Create a new migration after model changes
+docker compose exec api alembic revision --autogenerate -m "describe change"
+
+# Roll back one migration
+docker compose exec api alembic downgrade -1
+```
 
 ## API
 
@@ -98,4 +116,3 @@ Response:
 | `worker` | local build | – |
 | `db` | postgres:15 | 5432 |
 | `redis` | redis:7-alpine | 6379 |
-
