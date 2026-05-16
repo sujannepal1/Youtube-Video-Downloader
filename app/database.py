@@ -7,11 +7,18 @@ from app.config import settings
 # ---------------------------------------------------------------------------
 # Async engine + session – used by FastAPI route handlers
 # ---------------------------------------------------------------------------
-_async_url = settings.DATABASE_URL.replace(
-    "postgresql://", "postgresql+asyncpg://", 1
-).replace(
-    "postgres://", "postgresql+asyncpg://", 1
-)
+_db_url = settings.DATABASE_URL
+if _db_url.startswith("postgresql+asyncpg://"):
+    _async_url = _db_url
+elif _db_url.startswith("postgresql://"):
+    _async_url = _db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif _db_url.startswith("postgres://"):
+    _async_url = _db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+else:
+    raise ValueError(
+        f"Unsupported DATABASE_URL scheme for async driver: {_db_url!r}. "
+        "Expected a postgresql:// or postgresql+asyncpg:// URL."
+    )
 async_engine = create_async_engine(_async_url, echo=False)
 AsyncSessionLocal = async_sessionmaker(async_engine, expire_on_commit=False)
 
