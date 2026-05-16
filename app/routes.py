@@ -3,7 +3,8 @@ from typing import List
 
 from celery.result import AsyncResult
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.schemas import (
@@ -23,14 +24,14 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/download", response_model=DownloadResponse, status_code=202)
-def submit_download(request: DownloadRequest):
+async def submit_download(request: DownloadRequest):
     """Enqueue a YouTube audio download job."""
     task = download_task.delay(request.url, request.labels)
     return DownloadResponse(task_id=task.id, status="queued")
 
 
 @router.post("/bulk-download", response_model=BulkDownloadResponse, status_code=202)
-def submit_bulk_download(request: BulkDownloadRequest):
+async def submit_bulk_download(request: BulkDownloadRequest):
     """Enqueue multiple YouTube audio download jobs in a single request (max 100)."""
     enqueued = []
     for item in request.items:
@@ -44,7 +45,7 @@ def submit_bulk_download(request: BulkDownloadRequest):
 
 
 @router.get("/status/{task_id}", response_model=TaskStatusResponse)
-def get_task_status(task_id: str):
+async def get_task_status(task_id: str):
     """Check the status of a previously submitted download task."""
     result = AsyncResult(task_id, app=celery_app)
     return TaskStatusResponse(
@@ -55,15 +56,17 @@ def get_task_status(task_id: str):
 
 
 @router.get("/songs", response_model=List[SongResponse])
-def list_songs(db: Session = Depends(get_db)):
+async def list_songs(db: AsyncSession = Depends(get_db)):
     """Return all downloaded songs stored in the database."""
-    return db.query(Song).all()
+    result = await db.execute(select(Song))
+    return result.scalars().all()
 
 
 @router.get("/songs/{song_id}", response_model=SongResponse)
-def get_song(song_id: int, db: Session = Depends(get_db)):
+async def get_song(song_id: int, db: AsyncSession = Depends(get_db)):
     """Return a single song by its database ID."""
-    song = db.query(Song).filter(Song.id == song_id).first()
+    result = await db.execute(select(Song).where(Song.id == song_id))
+    song = result.scalar_one_or_none()
     if not song:
         raise HTTPException(status_code=404, detail="Song not found")
     return song
