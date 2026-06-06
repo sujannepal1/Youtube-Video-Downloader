@@ -48,10 +48,21 @@ app.include_router(router, prefix="/api")
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start = time.perf_counter()
-    logger.info("→ %s %s  client=%s", request.method, request.url.path, request.client.host if request.client else "unknown")
+    logger.info(
+        "→ %s %s  client=%s",
+        request.method,
+        request.url.path,
+        request.client.host if request.client else "unknown",
+    )
     response = await call_next(request)
     elapsed = (time.perf_counter() - start) * 1000
-    logger.info("← %s %s  status=%d  %.1fms", request.method, request.url.path, response.status_code, elapsed)
+    logger.info(
+        "← %s %s  status=%d  %.1fms",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed,
+    )
     return response
 
 

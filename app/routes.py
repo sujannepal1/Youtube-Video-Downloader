@@ -39,7 +39,13 @@ async def submit_bulk_download(request: BulkDownloadRequest):
     for idx, item in enumerate(request.items):
         try:
             task = download_task.delay(item.url, item.labels)
-            logger.debug("bulk item[%d]: url=%s task_id=%s labels=%s", idx, item.url, task.id, item.labels)
+            logger.debug(
+                "bulk item[%d]: url=%s task_id=%s labels=%s",
+                idx,
+                item.url,
+                task.id,
+                item.labels,
+            )
             enqueued.append(DownloadResponse(task_id=task.id, status="queued"))
         except Exception:
             logger.exception("bulk item[%d]: failed to enqueue url=%s", idx, item.url)
@@ -53,7 +59,12 @@ async def get_task_status(task_id: str):
     """Check the status of a previously submitted download task."""
     logger.debug("get_task_status: task_id=%s", task_id)
     result = AsyncResult(task_id, app=celery_app)
-    logger.info("get_task_status: task_id=%s status=%s ready=%s", task_id, result.status, result.ready())
+    logger.info(
+        "get_task_status: task_id=%s status=%s ready=%s",
+        task_id,
+        result.status,
+        result.ready(),
+    )
     return TaskStatusResponse(
         task_id=task_id,
         status=result.status,
@@ -78,5 +89,7 @@ async def get_song(song_id: int, db: AsyncSession = Depends(get_db)):
     if not song:
         logger.warning("get_song: song_id=%d not found", song_id)
         raise HTTPException(status_code=404, detail="Song not found")
-    logger.info("get_song: song_id=%d title=%r artist=%r", song_id, song.title, song.artist)
+    logger.info(
+        "get_song: song_id=%d title=%r artist=%r", song_id, song.title, song.artist
+    )
     return song
