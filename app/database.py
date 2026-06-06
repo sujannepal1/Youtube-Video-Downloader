@@ -35,12 +35,3 @@ async def get_db() -> AsyncSession:
     """FastAPI async dependency that yields an async database session."""
     async with AsyncSessionLocal() as session:
         yield session
-
-
-def get_sync_db():
-    """Synchronous dependency for non-async contexts (e.g. Celery workers)."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
