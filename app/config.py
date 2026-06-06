@@ -1,14 +1,25 @@
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
-    # These must be supplied via environment variables or a .env file.
-    DATABASE_URL: str
-    REDIS_URL: str = "redis://redis:6379/0"
-    DOWNLOAD_DIR: str = "/data/audio"
+    model_config = SettingsConfigDict(env_file=".env")
 
-    class Config:
-        env_file = ".env"
+    # PostgreSQL
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
+
+    # Application
+    DATABASE_URL: str
+    REDIS_URL: str
+    DOWNLOAD_DIR: str = Field(
+        "/data/audio", description="Root directory for downloaded audio files"
+    )
 
 
 settings = Settings()
